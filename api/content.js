@@ -13,15 +13,23 @@ export default async function handler(req, res) {
         }),
       }
     );
-    const { access_token } = await tokenRes.json();
+    const tokenData = await tokenRes.json();
+    if (!tokenData.access_token) {
+      return res.status(500).json({ error: 'Token failed', details: tokenData });
+    }
 
-    const graphRes = await fetch(
-      `https://graph.microsoft.com/v1.0/sites/${process.env.SHAREPOINT_SITE_ID}/drives/${process.env.SHAREPOINT_DRIVE_ID}/items/${process.env.EXCEL_FILE_ID}/workbook/tables/${process.env.EXCEL_TABLE_NAME}/rows`,
-      { headers: { Authorization: `Bearer ${access_token}` } }
-    );
-    const { value } = await graphRes.json();
+    const graphUrl = `https://graph.microsoft.com/v1.0/sites/${process.env.SHAREPOINT_SITE_ID}/drives/${process.env.SHAREPOINT_DRIVE_ID}/items/${process.env.EXCEL_FILE_ID}/workbook/tables/${process.env.EXCEL_TABLE_NAME}/rows`;
+    
+    const graphRes = await fetch(graphUrl, {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` }
+    });
+    const graphData = await graphRes.json();
+    
+    if (!graphData.value) {
+      return res.status(500).json({ error: 'Graph API failed', details: graphData });
+    }
 
-    const items = value.map((row) => {
+    const items = graphData.value.map((row) => {
       const v = row.values[0];
       return {
         dateAdded: v[0],
