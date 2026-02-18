@@ -17,34 +17,15 @@ const ContentDatabaseViewer = () => {
 
   const fetchData = async () => {
     setLoading(true);
-    setTimeout(() => {
-      const sampleData = [
-        {
-          id: 1,
-          dateAdded: '2024-02-05',
-          contentType: 'Article',
-          sourceName: 'TechCrunch',
-          name: 'The Future of AI in Healthcare',
-          excerpt: 'Exploring how artificial intelligence is transforming medical diagnostics and patient care...',
-          url: 'https://example.com/ai-healthcare',
-          contentSummary: 'This article discusses the latest advancements in AI-powered diagnostic tools.',
-          contentCategory: 'Technology'
-        },
-        {
-          id: 2,
-          dateAdded: '2024-02-04',
-          contentType: 'Video',
-          sourceName: 'YouTube',
-          name: 'Cloud Computing Explained',
-          excerpt: 'A comprehensive guide to understanding cloud infrastructure...',
-          url: 'https://example.com/cloud',
-          contentSummary: 'Video tutorial covering AWS, Azure, and Google Cloud platforms.',
-          contentCategory: 'Education'
-        }
-      ];
-      setData(sampleData);
+    try {
+      const response = await fetch('/api/content');
+      const items = await response.json();
+      setData(items);
+    } catch (error) {
+      console.error('Failed to fetch data:', error);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   const contentTypes = ['All', ...new Set(data.map(item => item.contentType))];
