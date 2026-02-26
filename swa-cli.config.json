@@ -1,0 +1,13 @@
+{
+  "configurations": {
+    "app": {
+      "appLocation": ".",
+      "outputLocation": "dist",
+      "apiLocation": "api",
+      "appBuildCommand": "npm run build",
+      "apiBuildCommand": "cd api && npm install",
+      "run": "npm run dev -- --port 5173",
+      "apiPort": 7071
+    }
+  }
+}

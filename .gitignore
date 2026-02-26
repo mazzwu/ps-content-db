@@ -3,3 +3,5 @@ dist
 .env
 .DS_Store
 .vercel
+api/local.settings.json
+api/node_modules
