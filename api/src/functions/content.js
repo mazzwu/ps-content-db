@@ -28,14 +28,15 @@ app.http('content', {
         };
       }
 
-      const graphUrl = `https://graph.microsoft.com/v1.0/sites/${process.env.SHAREPOINT_SITE_ID}/drives/${process.env.SHAREPOINT_DRIVE_ID}/items/${process.env.EXCEL_FILE_ID}/workbook/tables/${process.env.EXCEL_TABLE_NAME}/rows`;
+      const worksheetName = process.env.EXCEL_WORKSHEET_NAME || 'Sheet1';
+      const graphUrl = `https://graph.microsoft.com/v1.0/sites/${process.env.SHAREPOINT_SITE_ID}/drives/${process.env.SHAREPOINT_DRIVE_ID}/items/${process.env.EXCEL_FILE_ID}/workbook/worksheets('${worksheetName}')/usedRange`;
 
       const graphRes = await fetch(graphUrl, {
         headers: { Authorization: `Bearer ${tokenData.access_token}` },
       });
       const graphData = await graphRes.json();
 
-      if (!graphData.value) {
+      if (!graphData.values) {
         context.log('Graph API failed:', JSON.stringify(graphData));
         return {
           status: 500,
@@ -43,19 +44,19 @@ app.http('content', {
         };
       }
 
-      const items = graphData.value.map((row) => {
-        const v = row.values[0];
-        return {
-          dateAdded: v[0],
-          contentType: v[1],
-          sourceName: v[2],
-          name: v[3],
-          excerpt: v[4],
-          url: v[5],
-          contentSummary: v[6],
-          contentCategory: v[7],
-        };
-      });
+      const [headers, ...rows] = graphData.values;
+      const items = rows
+        .filter((row) => row.some((cell) => cell !== null && cell !== ''))
+        .map((row) => ({
+          dateAdded: row[0],
+          contentType: row[1],
+          sourceName: row[2],
+          name: row[3],
+          excerpt: row[4],
+          url: row[5],
+          contentSummary: row[6],
+          contentCategory: row[7],
+        }));
 
       return {
         status: 200,
