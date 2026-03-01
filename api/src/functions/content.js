@@ -1,5 +1,14 @@
 import { app } from '@azure/functions';
 
+function excelDateToISO(serial) {
+  if (!serial || typeof serial !== 'number') return serial;
+  // Excel epoch is Dec 30, 1899; serial 1 = Jan 1, 1900
+  // Account for Excel's leap year bug (it thinks 1900 was a leap year)
+  const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+  const ms = excelEpoch.getTime() + serial * 86400000;
+  return new Date(ms).toISOString().split('T')[0];
+}
+
 app.http('content', {
   methods: ['GET'],
   authLevel: 'anonymous',
@@ -48,7 +57,7 @@ app.http('content', {
       const items = rows
         .filter((row) => row.some((cell) => cell !== null && cell !== ''))
         .map((row) => ({
-          dateAdded: row[0],
+          dateAdded: excelDateToISO(row[0]),
           contentType: row[1],
           sourceName: row[2],
           name: row[3],
