@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Calendar, ExternalLink, RefreshCw } from 'lucide-react';
+import { Search, Filter, Calendar, ExternalLink, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const ContentDatabaseViewer = () => {
   const [data, setData] = useState([]);
@@ -10,6 +10,8 @@ const ContentDatabaseViewer = () => {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [sortOrder, setSortOrder] = useState('newest');
   const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
 
   useEffect(() => {
     fetchData();
@@ -48,6 +50,17 @@ const ContentDatabaseViewer = () => {
     }
     return new Date(a.dateAdded) - new Date(b.dateAdded);
   });
+
+  // Reset to page 1 when filters/search/sort change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedType, selectedSource, selectedCategories, sortOrder]);
+
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const paginatedData = filteredData.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -123,9 +136,14 @@ const ContentDatabaseViewer = () => {
           </div>
         ) : (
           <>
-            <div className="mb-4 text-sm text-gray-600">{filteredData.length} {filteredData.length === 1 ? 'item' : 'items'} found</div>
+            <div className="mb-4 flex items-center justify-between">
+              <span className="text-sm text-gray-600">{filteredData.length} {filteredData.length === 1 ? 'item' : 'items'} found</span>
+              {totalPages > 1 && (
+                <span className="text-sm text-gray-600">Page {currentPage} of {totalPages}</span>
+              )}
+            </div>
             <div className="space-y-4">
-              {filteredData.map(item => (
+              {paginatedData.map(item => (
                 <div key={item.id} className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
@@ -157,6 +175,46 @@ const ContentDatabaseViewer = () => {
                 <div className="text-center py-12 text-gray-500">No content found matching your criteria.</div>
               )}
             </div>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-8">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="flex items-center gap-1 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Previous
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(page => page === 1 || page === totalPages || Math.abs(page - currentPage) <= 2)
+                  .reduce((pages, page, idx, arr) => {
+                    if (idx > 0 && page - arr[idx - 1] > 1) {
+                      pages.push('ellipsis-' + page);
+                    }
+                    pages.push(page);
+                    return pages;
+                  }, [])
+                  .map(page => typeof page === 'string' ? (
+                    <span key={page} className="px-2 text-gray-400">...</span>
+                  ) : (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`px-3 py-2 text-sm rounded-lg transition-colors ${currentPage === page ? 'bg-blue-600 text-white' : 'border border-gray-300 hover:bg-gray-50'}`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="flex items-center gap-1 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>
